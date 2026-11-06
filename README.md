@@ -5,8 +5,6 @@ NED University of Engineering and Technology, Department of CSIT
 
 | Roll No. | Name |
 |---|---|
-| CT-24033 | Muhammad Hamza Siddiqui |
-| CT-24044 | Saif Ur Rehman |
 | CT-24312 | Muhammad Talha Bin Suhail |
 
 Predicts at emergency department (ED) triage whether a patient will be **admitted** or
