@@ -1,0 +1,12 @@
+# Raw downloads (Yale RData is 103 MB, above GitHub's 100 MB limit).
+# Re-download them as described in 01_prepare_datasets.py if needed.
+data/raw_download/
+
+# Submission archive (same files as the repository)
+PAI_CCA_Submission.zip
+
+# Python / editor / Office temp files
+__pycache__/
+*.pyc
+.vscode/
+~$*

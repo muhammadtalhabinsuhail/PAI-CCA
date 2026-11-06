@@ -1,0 +1,13 @@
+params,mean_test_score,std_test_score,rank_test_score
+"{'model__min_samples_leaf': 100, 'model__max_leaf_nodes': 31, 'model__max_iter': 400, 'model__learning_rate': 0.08, 'model__l2_regularization': 5.0}",0.879398177312576,0.0021694191517322814,1
+"{'model__min_samples_leaf': 100, 'model__max_leaf_nodes': 31, 'model__max_iter': 300, 'model__learning_rate': 0.15, 'model__l2_regularization': 5.0}",0.8792282564856423,0.002250479838778334,2
+"{'model__min_samples_leaf': 20, 'model__max_leaf_nodes': 31, 'model__max_iter': 300, 'model__learning_rate': 0.05, 'model__l2_regularization': 5.0}",0.8791983475921578,0.0027498980926332923,3
+"{'model__min_samples_leaf': 100, 'model__max_leaf_nodes': 15, 'model__max_iter': 300, 'model__learning_rate': 0.08, 'model__l2_regularization': 0.1}",0.8791812138897502,0.0027747779536677827,4
+"{'model__min_samples_leaf': 100, 'model__max_leaf_nodes': 63, 'model__max_iter': 200, 'model__learning_rate': 0.03, 'model__l2_regularization': 0.1}",0.8790711807022111,0.00247800518285722,5
+"{'model__min_samples_leaf': 100, 'model__max_leaf_nodes': 63, 'model__max_iter': 400, 'model__learning_rate': 0.08, 'model__l2_regularization': 5.0}",0.8790562046890837,0.002250274444297041,6
+"{'model__min_samples_leaf': 50, 'model__max_leaf_nodes': 63, 'model__max_iter': 600, 'model__learning_rate': 0.05, 'model__l2_regularization': 0.0}",0.8788456283081931,0.0027157681202588826,7
+"{'model__min_samples_leaf': 200, 'model__max_leaf_nodes': 31, 'model__max_iter': 300, 'model__learning_rate': 0.05, 'model__l2_regularization': 0.0}",0.8776490959055131,0.0023115109889916595,8
+"{'model__min_samples_leaf': 200, 'model__max_leaf_nodes': 31, 'model__max_iter': 200, 'model__learning_rate': 0.08, 'model__l2_regularization': 5.0}",0.877552245561139,0.002257322990169491,9
+"{'model__min_samples_leaf': 200, 'model__max_leaf_nodes': 15, 'model__max_iter': 400, 'model__learning_rate': 0.08, 'model__l2_regularization': 5.0}",0.87752279564722,0.0025565500540301166,10
+"{'model__min_samples_leaf': 20, 'model__max_leaf_nodes': 127, 'model__max_iter': 300, 'model__learning_rate': 0.1, 'model__l2_regularization': 1.0}",0.877455827167615,0.002560230496115075,11
+"{'model__min_samples_leaf': 200, 'model__max_leaf_nodes': 31, 'model__max_iter': 400, 'model__learning_rate': 0.1, 'model__l2_regularization': 1.0}",0.8774428828624771,0.002283652325678069,12

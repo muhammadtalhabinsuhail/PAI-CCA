@@ -1,0 +1,3 @@
+Evaluation data (10 shared triage features),ROC-AUC
+USA test set (same hospital system),0.8477
+"Korea KTAS (external, never seen)",0.7598

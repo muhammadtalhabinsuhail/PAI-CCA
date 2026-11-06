@@ -1,0 +1,361 @@
+
+==============================================================================
+1. LOADING THE DATASETS
+==============================================================================
+Dataset 1 - ED Patient Flow (USA): 100,000 visits x 42 columns
+Dataset 2 - KTAS Triage (Korea)  : 1,267 visits x 24 columns
+
+First 5 rows of Dataset 1:
+   visit_id ed_site  esi_level   age  gender     ethnicity                       race language marital_status employment_status insurance_status arrival_mode arrival_month arrival_day arrival_hour_bin    chief_complaint previous_disposition  prior_ed_visits  prior_admissions  prior_surgeries  prior_imaging_tests  prior_ekgs  home_medications  num_comorbidities  hypertension  diabetes  heart_failure  coronary_disease  arrhythmia  copd_asthma  kidney_disease  cancer_history  mental_health_disorder  substance_use_disorder  heart_rate  systolic_bp  diastolic_bp  respiratory_rate  oxygen_saturation  on_supplemental_oxygen  temperature_f disposition
+0         1       A        4.0  53.0  Female  Non-Hispanic         White or Caucasian  English        Married          Disabled         Medicare          Car      December    Thursday            11-14            hippain            Discharge             30.0              15.0             11.0                 11.0         4.0               0.0                 19             0         0              0                 0           0            1               0               0                       1                       1        99.0        126.0          97.0              18.0               97.0                     0.0           98.0   Discharge
+1         2       C        4.0  54.0  Female  Non-Hispanic         White or Caucasian  English        Married         Full Time       Commercial          Car           May     Tuesday            15-18           kneepain            Discharge              0.0               0.0              0.0                  0.0         0.0               0.0                  3             0         0              0                 0           0            0               0               0                       1                       0        89.0        135.0          87.0              18.0               98.0                     0.0           98.5   Discharge
+2         3       B        3.0  32.0  Female  Non-Hispanic  Black or African American  English         Single         Full Time       Commercial          Car      December    Saturday            15-18          chestpain                Admit              3.0               1.0              2.0                  0.0         0.0               0.0                 13             0         0              0                 0           0            0               0               0                       0                       0        81.0        127.0          82.0              18.0               97.0                     0.0           98.3   Discharge
+3         4       A        2.0  48.0    Male  Non-Hispanic         White or Caucasian  English         Single         Full Time       Commercial          Car           May      Friday            07-10       palpitations    No previous dispo              0.0               0.0              4.0                  0.0         0.0               0.0                  3             0         0              0                 0           1            0               0               0                       0                       0       115.0        139.0          83.0              16.0               99.0                     0.0           98.2   Discharge
+4         5       B        4.0  23.0  Female  Non-Hispanic  Black or African American  English         Single         Full Time            Other      Walk-in         March    Thursday            07-10  motorvehiclecrash            Discharge              1.0               0.0              1.0                  0.0         0.0               0.0                  2             0         0              0                 0           0            0               0               0                       0                       0        87.0        114.0          67.0              16.0                NaN                     0.0           99.1   Discharge
+
+==============================================================================
+2. DATA UNDERSTANDING AND QUALITY REPORT (Dataset 1)
+==============================================================================
+
+Data types:
+str        15
+float64    15
+int64      12
+
+Duplicate rows (ignoring visit_id): 0
+
+Missing values (% of rows):
+oxygen_saturation         48.43
+on_supplemental_oxygen    40.43
+temperature_f             32.52
+respiratory_rate          30.32
+diastolic_bp              29.90
+systolic_bp               29.87
+heart_rate                29.54
+arrival_mode               3.86
+chief_complaint            0.49
+esi_level                  0.44
+race                       0.01
+age                        0.00
+
+Placeholder answers that actually mean 'missing':
+   ethnicity           : 705 rows are 'Unknown' / 'Patient Refused'
+   race                : 1,180 rows are 'Unknown' / 'Patient Refused'
+   marital_status      : 137 rows are 'Unknown' / 'Patient Refused'
+   employment_status   : 337 rows are 'Unknown' / 'Patient Refused'
+
+Inconsistent spelling in arrival_mode: ['Car', 'Other', 'Police', 'Public Transportation', 'Walk-in', 'Wheelchair', 'ambulance']
+
+Vital-sign ranges BEFORE cleaning:
+                    min    50%    max
+heart_rate         30.0   84.0  280.0
+systolic_bp        59.0  131.0  274.0
+diastolic_bp       25.0   80.0  214.0
+respiratory_rate    8.0   18.0   69.0
+oxygen_saturation  64.0   98.0   99.0
+temperature_f      90.0   98.0  104.7
+   [figure saved] outputs/figures/fig01_missing_values.png
+
+==============================================================================
+3. PREPROCESSING
+==============================================================================
+Steps applied:
+  a) 'Unknown' / 'Patient Refused' -> missing value
+  b) Spelling unified: 'ambulance' -> 'Ambulance', ED site codes -> 'Site A/B/C'
+  c) Temperature converted from Fahrenheit to Celsius
+  d) Impossible vital signs (e.g. heart rate > 250) -> missing value
+  e) Rare chief complaints grouped into 'other' (kept top 30)
+  f) Target created: admitted = 1 if disposition == 'Admit' else 0
+  g) Missing numbers -> median + 'was missing' indicator; missing text -> 'Missing'
+  h) Text columns -> one-hot encoding; numbers -> standard scaling
+  i) Leakage check: ['home_medications'] kept for EDA but excluded from the model
+
+Impossible vital-sign values set to missing: {'heart_rate': 1, 'systolic_bp': 0, 'diastolic_bp': 1, 'respiratory_rate': 6, 'oxygen_saturation': 0, 'temperature_c': 0}
+Duplicate visits removed: 1
+
+Vital-sign ranges AFTER cleaning:
+                    min    50%    max
+heart_rate         30.0   84.0  242.0
+systolic_bp        59.0  131.0  274.0
+diastolic_bp       25.0   80.0  190.0
+respiratory_rate    8.0   18.0   60.0
+oxygen_saturation  64.0   98.0   99.0
+temperature_c      32.2   36.7   40.4
+
+==============================================================================
+4. EXPLORATORY DATA ANALYSIS (Dataset 1)
+==============================================================================
+
+Statistical summary of numeric features:
+                     count    mean    std   min    25%    50%    75%    max
+age                99995.0   49.86  20.43  18.0   32.0   49.0   64.0  106.0
+esi_level          99560.0    3.02   0.87   1.0    2.0    3.0    4.0    5.0
+prior_ed_visits    99999.0    3.66  10.70   0.0    0.0    1.0    3.0  359.0
+prior_admissions   99999.0    0.93   2.46   0.0    0.0    0.0    1.0   48.0
+num_comorbidities  99999.0    5.73   5.53   0.0    1.0    4.0    9.0   68.0
+home_medications   99999.0    2.16   4.82   0.0    0.0    0.0    1.0   50.0
+heart_rate         70459.0   85.59  16.74  30.0   74.0   84.0   96.0  242.0
+systolic_bp        70126.0  133.25  21.32  59.0  118.0  131.0  145.0  274.0
+diastolic_bp       70103.0   80.41  13.92  25.0   71.0   80.0   89.0  190.0
+respiratory_rate   69678.0   17.60   1.89   8.0   16.0   18.0   18.0   60.0
+oxygen_saturation  51574.0   97.25   1.93  64.0   96.0   98.0   99.0   99.0
+temperature_c      67484.0   36.71   0.44  32.2   36.5   36.7   36.9   40.4
+
+Mean of key features by outcome:
+outcome            Admitted  Discharged
+age                   61.64       44.85
+esi_level              2.43        3.27
+prior_admissions       1.62        0.64
+num_comorbidities      8.15        4.71
+heart_rate            88.89       84.54
+oxygen_saturation     96.62       97.47
+temperature_c         36.76       36.70
+   [figure saved] outputs/figures/fig02_class_distribution.png
+   [figure saved] outputs/figures/fig03_age_by_outcome.png
+   [figure saved] outputs/figures/fig04_admission_by_esi.png
+
+Admission rate by ESI level (%):
+           mean   size
+esi_level             
+1.0        86.0    931
+2.0        55.0  29084
+3.0        29.4  42007
+4.0         2.3  22528
+5.0         0.4   5010
+   [figure saved] outputs/figures/fig05_admission_by_arrival.png
+
+Admission rate by arrival mode (%):
+                       mean   size
+arrival_mode                      
+Public Transportation  10.8    473
+Walk-In                18.9  20523
+Car                    22.2  39697
+Police                 25.0     20
+Ambulance              47.7  33918
+Other                  50.7   1242
+Wheelchair             50.9    269
+   [figure saved] outputs/figures/fig06_admission_by_complaint.png
+   [figure saved] outputs/figures/fig07_vitals_by_outcome.png
+   [figure saved] outputs/figures/fig08_correlation_heatmap.png
+
+Correlation of each numeric feature with 'admitted':
+home_medications       0.537
+age                    0.376
+num_comorbidities      0.285
+heart_failure          0.189
+prior_admissions       0.182
+kidney_disease         0.180
+prior_imaging_tests    0.114
+heart_rate             0.111
+respiratory_rate       0.106
+temperature_c          0.055
+systolic_bp            0.038
+prior_ed_visits       -0.022
+diastolic_bp          -0.041
+oxygen_saturation     -0.192
+esi_level             -0.442
+   [figure saved] outputs/figures/fig09_admissions_heatmap_day_hour.png
+   [figure saved] outputs/figures/fig10_history_vs_admission.png
+   [figure saved] outputs/figures/fig11_age_insurance.png
+
+==============================================================================
+5. CLASS IMBALANCE CHECK
+==============================================================================
+Admitted  : 29,801 (29.8%)
+Discharged: 70,198 (70.2%)
+Imbalance ratio: 2.36 discharged for every admitted patient
+-> Moderate imbalance. A model that always says 'discharge' would already be
+   70.2% accurate, so accuracy alone is misleading.
+Handling: (1) stratified train/test split, (2) class_weight='balanced' so
+   mistakes on admitted patients cost more, (3) metrics that focus on the
+   minority class (recall, F1, PR-AUC), (4) decision-threshold tuning.
+
+==============================================================================
+6. MODEL TRAINING
+==============================================================================
+Training set: 79,999 visits | Test set: 20,000 visits
+Admission rate - train 0.298, test 0.298 (stratified)
+   trained Logistic Regression (no balancing)     in   3.4 s
+   trained Logistic Regression                    in   4.2 s
+   trained Decision Tree                          in   3.0 s
+   trained Random Forest                          in  14.1 s
+   trained Gradient Boosting                      in   8.7 s
+
+==============================================================================
+7. PERFORMANCE IMPROVEMENT (hyperparameter tuning + ensemble)
+==============================================================================
+RandomizedSearchCV: 12 settings x 3 folds in 195 s
+Best parameters : {'min_samples_leaf': 100, 'max_leaf_nodes': 31, 'max_iter': 400, 'learning_rate': 0.08, 'l2_regularization': 5.0}
+Best CV ROC-AUC : 0.8794
+
+Data-leakage check (tuned Gradient Boosting):
+   with home_medications    : test ROC-AUC = 0.9271
+   without (final features) : test ROC-AUC = 0.8853
+   Admitted patients list 6.1 home medications vs 0.5 for discharged
+   patients, because the list is completed during admission (medication reconciliation).
+   It is not reliably known at triage, so it is excluded from the final model.
+Soft-voting ensemble (LR + RF + tuned GB, weights 1:1:2) trained in 28 s
+
+==============================================================================
+8. EVALUATION ON THE UNSEEN TEST SET
+==============================================================================
+                                    Accuracy  Balanced accuracy  Precision  Recall (sensitivity)  Specificity  F1-score  ROC-AUC  PR-AUC
+Model                                                                                                                                   
+Logistic Regression (no balancing)    0.8124             0.7534     0.7193                0.6074       0.8994    0.6586   0.8774  0.7443
+Logistic Regression                   0.7902             0.7946     0.6126                0.8055       0.7838    0.6959   0.8774  0.7427
+Decision Tree                         0.7507             0.7685     0.5559                0.8126       0.7244    0.6602   0.8551  0.6934
+Random Forest                         0.7886             0.7897     0.6123                0.7923       0.7870    0.6908   0.8746  0.7282
+Gradient Boosting                     0.7896             0.8001     0.6082                0.8262       0.7741    0.7006   0.8845  0.7574
+Tuned Gradient Boosting               0.7916             0.8023     0.6109                0.8287       0.7759    0.7033   0.8853  0.7581
+Voting Ensemble                       0.7938             0.8015     0.6156                0.8205       0.7825    0.7034   0.8848  0.7532
+
+Effect of class balancing on Logistic Regression:
+   Logistic Regression (no balancing)     recall=0.607  precision=0.719  F1=0.659
+   Logistic Regression                    recall=0.806  precision=0.613  F1=0.696
+
+Best model by ROC-AUC: Tuned Gradient Boosting (ROC-AUC = 0.8853)
+   [figure saved] outputs/figures/fig12_model_comparison.png
+   [figure saved] outputs/figures/fig13_roc_pr_curves.png
+   [figure saved] outputs/figures/fig14_confusion_matrices.png
+
+Classification report - Tuned Gradient Boosting:
+              precision    recall  f1-score   support
+
+   Discharge      0.914     0.776     0.839     14040
+       Admit      0.611     0.829     0.703      5960
+
+    accuracy                          0.792     20000
+   macro avg      0.763     0.802     0.771     20000
+weighted avg      0.824     0.792     0.799     20000
+
+   [figure saved] outputs/figures/fig15_threshold_tuning.png
+Threshold with best F1: 0.50
+Metrics at 0.50       : {'Accuracy': 0.792, 'Balanced accuracy': 0.802, 'Precision': 0.611, 'Recall (sensitivity)': 0.829, 'Specificity': np.float64(0.776), 'F1-score': 0.703, 'ROC-AUC': 0.885, 'PR-AUC': 0.758}
+Metrics at 0.50       : {'Accuracy': 0.792, 'Balanced accuracy': 0.802, 'Precision': 0.611, 'Recall (sensitivity)': 0.829, 'Specificity': np.float64(0.776), 'F1-score': 0.703, 'ROC-AUC': 0.885, 'PR-AUC': 0.758}
+
+Computing permutation feature importance (5,000 test visits, 5 repeats)...
+             feature  importance    std
+           esi_level      0.1280 0.0052
+                 age      0.0185 0.0012
+     chief_complaint      0.0132 0.0013
+     prior_ed_visits      0.0109 0.0011
+    prior_admissions      0.0092 0.0006
+        arrival_mode      0.0082 0.0012
+    insurance_status      0.0081 0.0003
+previous_disposition      0.0048 0.0007
+          heart_rate      0.0037 0.0005
+             ed_site      0.0027 0.0006
+   num_comorbidities      0.0025 0.0008
+                race      0.0015 0.0005
+              gender      0.0015 0.0003
+         systolic_bp      0.0012 0.0004
+      kidney_disease      0.0009 0.0003
+   [figure saved] outputs/figures/fig16_feature_importance.png
+
+==============================================================================
+9. DATASET 2 - KOREAN TRIAGE AND ACUITY SCALE (KTAS)
+==============================================================================
+Raw disposition codes:
+Disposition
+Discharge            797
+Ward admission       373
+Transfer              32
+AMA discharge         26
+Operation from ED     22
+Death                  9
+ICU admission          8
+   SBP        :  25 values are the text '측불' (Korean for 'unmeasurable')
+   DBP        :  29 values are the text '측불' (Korean for 'unmeasurable')
+   HR         :  20 values are the text '측불' (Korean for 'unmeasurable')
+   RR         :  22 values are the text '측불' (Korean for 'unmeasurable')
+   BT         :  18 values are the text '측불' (Korean for 'unmeasurable')
+   Saturation :   9 values are the text '측불' (Korean for 'unmeasurable')
+   NRS_pain   : 556 missing
+
+After cleaning: 1,226 visits (transfers and deaths removed)
+Admitted (ward / ICU / operation): 403 (32.9%)
+Missing values after converting text to numbers:
+SBP            19
+DBP            21
+HR             15
+RR             15
+BT             13
+Saturation    685
+NRS_pain      533
+   [figure saved] outputs/figures/fig17_ktas_eda.png
+
+Mean of features by outcome (KTAS):
+outcome                   Admitted  Discharged
+Age                          60.63       50.82
+Patients number per hour      7.56        7.53
+NRS_pain                      4.15        4.10
+SBP                         129.37      136.30
+DBP                          78.29       80.61
+HR                           85.16       83.34
+RR                           20.01       19.22
+BT                           36.65       36.55
+Saturation                   96.87       97.65
+KTAS_RN                       2.91        3.59
+
+KTAS models - 5-fold stratified cross-validation:
+                                  Accuracy  Precision  Recall  F1-score  ROC-AUC  ROC-AUC std
+Model (5-fold CV)                                                                            
+Nurse KTAS level only (baseline)    0.6436     0.4735  0.7592    0.5828   0.7112       0.0455
+Logistic Regression                 0.7374     0.5837  0.7145    0.6422   0.7987       0.0448
+Random Forest                       0.7447     0.6009  0.6823    0.6381   0.8080       0.0275
+Gradient Boosting                   0.7464     0.6046  0.6823    0.6395   0.7938       0.0305
+
+==============================================================================
+10. CROSS-DATASET VALIDATION (train on USA data -> test on Korean data)
+==============================================================================
+                                             ROC-AUC
+Evaluation data (10 shared triage features)         
+USA test set (same hospital system)           0.8477
+Korea KTAS (external, never seen)             0.7598
+-> The triage-only model keeps useful discrimination on a different country,
+   but loses accuracy: hospitals differ in patients, triage scales and admission
+   policies, so a model should be re-calibrated locally before real use.
+   [figure saved] outputs/figures/fig18_external_validation.png
+
+==============================================================================
+11. HOSPITAL OPERATIONS VIEW - expected bed demand
+==============================================================================
+Balanced class weights push scores upwards, so summing raw scores over-estimates
+admissions (8135 vs 5960 actual). After prior
+correction (odds divided by 2.36) the forecast is 5892 admissions.
+Admissions in the test set per arrival time band (actual vs model-expected):
+                  actual  raw_score_sum  expected
+arrival_hour_bin                                 
+23-02                509            708       501
+03-06                340            487       351
+07-10               1028           1441      1036
+11-14               1678           2232      1643
+15-18               1449           1919      1401
+19-22                956           1347       959
+   [figure saved] outputs/figures/fig19_bed_demand_forecast.png
+
+==============================================================================
+12. SAVING THE FINAL MODEL
+==============================================================================
+Saved outputs/models/admission_model.joblib  (Tuned Gradient Boosting)
+Saved outputs/models/model_info.json and demo_patients.csv
+
+==============================================================================
+PROJECT SUMMARY
+==============================================================================
+Best model           : Tuned Gradient Boosting
+   Accuracy              : 0.7916
+   Balanced accuracy     : 0.8023
+   Precision             : 0.6109
+   Recall (sensitivity)  : 0.8287
+   Specificity           : 0.7759
+   F1-score              : 0.7033
+   ROC-AUC               : 0.8853
+   PR-AUC                : 0.7581
+Best F1 threshold    : 0.50  (F1 = 0.7033, recall = 0.8287)
+Top 5 predictors     : esi_level, age, chief_complaint, prior_ed_visits, prior_admissions
+KTAS best CV ROC-AUC : 0.8080 (Random Forest)
+External ROC-AUC     : 0.7598
+
+Total run time: 5.4 minutes
+Next step: run  python 03_admission_app.py  to open the prediction interface.
